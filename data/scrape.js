@@ -1,22 +1,23 @@
+const { clear } = require('console');
 const fs = require('fs');
 const pup = require('puppeteer');
 const baseUrl = 'https://en.wikipedia.org';
 
 //Previus values, cuz some rows span longer if they have the same value
-// TODO: possible previous values: extinct...
+// TODO: possible previous values: extinct time, former range
 
 //------ Get fata from table --------//
 const getData = async () => {
   const browser = await pup.launch({
     dumpio: true,
-    headless: false,
+    // headless: false,
   });
+
   const page = await browser.newPage();
 
   await page.goto(
     baseUrl + '/wiki/List_of_extinct_animals_of_the_British_Isles'
   );
-
   const data = await page.$$eval('table.sortable tbody > tr', (rows) => {
     const rowsArr = Array.from(rows, (row) => {
       const cols = row.querySelectorAll('td');
@@ -28,11 +29,17 @@ const getData = async () => {
 
         // commonName & link
         if (i === 0) {
+          // wikiLink
           let link = col.querySelector('a');
           let wikiLink = link.getAttribute('href');
           if (!wikiLink.startsWith('/')) wikiLink = false;
+          //commonName
           let commonName = col.textContent;
-          if (commonName.startsWith('†')) commonName = commonName.slice(1);
+          if (commonName) {
+            commonName = commonName.replace(/\[.*?\]|[']+/g, ''); //remove [n], ''
+            commonName = commonName.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
+            if (commonName.startsWith('†')) commonName = commonName.slice(1);
+          }
           animalObj.commonName = commonName;
           animalObj.wikiLink = wikiLink;
         }
@@ -44,11 +51,14 @@ const getData = async () => {
 
         //Last seen
         if (i === 3) {
-          let colText = col.textContent.trim();
-          if (colText.startsWith('c. ')) colText = colText.slice(3); // Remove circa // 'c. '
-          colText.replace(/\[.*?\]|[']+/g, ''); //remove [n], ''
-          if (colText === '') colText = 'unknown';
-          animalObj.lastRecord = colText;
+          let seenText = col.textContent;
+          if (seenText) {
+            seenText = seenText.replace(/\[.*?\]|[']+/g, ''); //remove [n], ''
+            seenText = seenText.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
+            if (seenText.startsWith('c. ')) seenText = seenText.slice(3); // Remove circa // 'c. '
+          }
+          if (seenText === '') seenText = 'unknown';
+          animalObj.lastRecord = seenText;
         }
       });
       return animalObj;
@@ -70,17 +80,22 @@ const getData = async () => {
         ?.getAttribute('href');
 
       // Short description
-      const shortDesc = document.querySelectorAll('.mw-parser-output > p')[1]
+      let shortDesc = document.querySelectorAll('.mw-parser-output > p')[1]
         .textContent;
       if (imageSrc) returnData.imageSrc = imageSrc;
-      if (shortDesc) returnData.shortDesc = shortDesc;
+      if (shortDesc) {
+        shortDesc = shortDesc.replace(/\[.*?\]|[']+/g, ''); //remove [n], ''
+        shortDesc = shortDesc.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
+
+        returnData.shortDesc = shortDesc;
+      }
       return returnData;
     });
 
     data[i] = { ...data[i], ...newData };
-    console.log('Got data: ', data[i]);
     const pause = (ms) => new Promise((res) => setTimeout(res, ms));
-    await pause(2000); // Don't spam like there is no tommorrow ;)
+    await pause(500); // Don't spam like there is no tommorrow ;)
+    if (i === 3) break; // TODO: remove later
   }
 
   await browser.close();
@@ -90,35 +105,37 @@ const getData = async () => {
 
 (async function () {
   const data = await getData();
-  //   console.log(data);
-  let hasWiki = 0;
-  let noWiki = 0;
-  //Getting data from single pages:
-  for (let i = 0; i < data.length; i++) {
-    const animal = data[i];
-    if (!animal.wikiLink) {
-      noWiki++;
-      continue;
-    }
-    // If it has wiki
-    hasWiki++;
-  }
+  console.log(data);
+  console.log(typeof data);
+  console.log(JSON.stringify(data));
+  console.log(typeof JSON.stringify(data));
+
+  // First write to file
+  fs.writeFileSync(`${__dirname}/animalData.json`, JSON.stringify(data));
+
+  //Log wikis
+  //   let hasWiki = 0;
+  //   let noWiki = 0;
+  //   for (let i = 0; i < data.length; i++) {
+  //     const animal = data[i];
+  //     if (!animal.wikiLink) {
+  //       noWiki++;
+  //       continue;
+  //     }
+  //     // If it has wiki
+  //     hasWiki++;
+  //   }
 
   // Stats logging
-  console.log(
-    ' Total: ',
-    data.length,
-    ' hasWiki: ',
-    hasWiki,
-    ' noWiki: ',
-    noWiki
-  );
+  //   console.log(
+  //     ' Total: ',
+  //     data.length,
+  //     ' hasWiki: ',
+  //     hasWiki,
+  //     ' noWiki: ',
+  //     noWiki
+  //   );
 })();
-
-// Convert it to JSON
-
-// JSON.stringify() data
-// fs.writeFileSync(`${__dirname}/animalsFile.json`)
 
 //-------------------------------------------------------------------//
 // Want:
