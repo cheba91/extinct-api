@@ -5,7 +5,7 @@ const baseUrl = 'https://en.wikipedia.org';
 //Previus values, cuz some rows span longer if they have the same value
 // TODO: possible previous values: extinct...
 
-// Get data from table
+//------ Get fata from table --------//
 const getData = async () => {
   const browser = await pup.launch({
     dumpio: true,
@@ -24,6 +24,7 @@ const getData = async () => {
       Array.from(cols, (col, i) => {
         //Process each col individually for more control
         // TODO: Check which cols are required and which optional
+        // TODO: get location when on real data
 
         // commonName & link
         if (i === 0) {
@@ -55,7 +56,7 @@ const getData = async () => {
 
     return rowsArr;
   });
-  // Get single pages
+  //------ Get single pages --------//
   for (let i = 0; i < data.length; i++) {
     const animal = data[i];
     if (!animal.wikiLink) continue;
