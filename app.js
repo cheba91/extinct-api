@@ -8,22 +8,13 @@ const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 const rateLimit = require('express-rate-limit');
 const globalErrorHandler = require('./controllers/errorController');
-const tourRouter = require('./routes/tourRoutes');
-const userRouter = require('./routes/userRoutes');
-const reviewRouter = require('./routes/reviewRoutes');
-const bookingRouter = require('./routes/bookingRoutes');
-const viewRouter = require('./routes/viewRoutes');
 const AppError = require('./utils/appError');
+
+const animalRouter = require('./routes/animalRoutes');
 
 const app = express();
 
-app.set('view engine', 'pug');
-app.set('views', path.join(__dirname, 'views'));
-
 // GLOBAL middleware //
-
-// For serving static files
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Security http headers
 app.use(helmet());
@@ -37,7 +28,7 @@ if (process.env.NODE_ENV === 'development') {
 const limiter = rateLimit({
   max: 50,
   windowMs: 15 * 60 * 1000,
-  message: 'Too many requests from this IP',
+  message: 'Too many requests',
 });
 app.use('/api', limiter);
 
@@ -53,30 +44,19 @@ app.use(xss()); // converts html tags
 //Prevent parameter pollution: removes double values + whitelist some
 app.use(
   hpp({
-    whitelist: [
-      'duration',
-      'ratingsAverage',
-      'ratingsQty',
-      'maxGroupSize',
-      'difficulty',
-      'price',
-    ],
+    whitelist: ['number'],
   })
 );
 
 // Test middleware
-app.use((req, res, next) => {
-  req.requestTime = new Date().toISOString();
-  // console.log(req.headers);
-  next();
-});
+// app.use((req, res, next) => {
+//   req.requestTime = new Date().toISOString();
+//   // console.log(req.headers);
+//   next();
+// });
 
 // Routes
-app.use('/', viewRouter);
-app.use('/api/v1/tours', tourRouter);
-app.use('/api/v1/users', userRouter);
-app.use('/api/v1/reviews', reviewRouter);
-app.use('/api/v1/bookings', bookingRouter);
+app.use('/api/v1/animal', animalRouter);
 
 // Catch all unhandlerd requests:
 app.all('*', (req, res, next) => {
