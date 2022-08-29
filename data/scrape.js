@@ -1,6 +1,6 @@
-const { clear } = require('console');
 const fs = require('fs');
 const pup = require('puppeteer');
+const { map } = require('../app');
 const baseUrl = 'https://en.wikipedia.org';
 
 //------ Get fata from table --------//
@@ -16,7 +16,6 @@ const getData = async () => {
   await page.goto(baseUrl + '/wiki/Timeline_of_extinctions_in_the_Holocene', {
     waitUntil: 'networkidle2',
   });
-  //   await page.waitForTimeout(4000);
   const data = await page.$$eval(
     'table.jquery-tablesorter tbody > tr',
     (rows) => {
@@ -24,33 +23,42 @@ const getData = async () => {
         const cols = row.querySelectorAll('td');
         const animalObj = {};
         Array.from(cols, (col, i) => {
-          //Previus values, cuz some rows span longer if they have the same value
-          let seenTextPrev, locationPrev;
-
-          //Process each col individually for more control
-
           // COL 1 Last seen
-          if (i === 0) {
+          if (col.querySelector('b')) {
             let seenText = col.textContent;
             if (seenText) {
               seenText = seenText.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
               seenText = seenText.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
               if (seenText.startsWith('c. ')) seenText = seenText.slice(3); // Remove circa // 'c. '
               if (seenText === '') seenText = 'unknown';
-              seenTextPrev = seenText;
-            } else {
-              seenText = seenTextPrev;
             }
-            console.log('ANIMAL LAST RECORD: ', seenText);
             animalObj.lastRecord = seenText;
           }
 
+          // COL 3 bionomialName
+          if (col.querySelector('i') && (i === 1 || i === 2)) {
+            let bionomialName = col.textContent;
+            if (bionomialName) {
+              bionomialName = bionomialName.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
+              bionomialName = bionomialName.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
+            }
+
+            animalObj.bionomialName = bionomialName;
+            return;
+          }
+
           // COL 2 commonName & link
-          if (i === 1) {
+          if (
+            // !col.textContent.startsWith('c. ') &&
+            // !Number(col.textContent.match(/^\d+/)[0]) &&
+            !col.querySelector('b') &&
+            (i === 0 || i === 1)
+          ) {
+            console.log('IN COMMON NAME:', col.textContent);
             // wikiLink
             let link = col.querySelector('a');
-            let wikiLink = link.getAttribute('href');
-            if (!wikiLink.startsWith('/')) wikiLink = false;
+            let wikiLink = link?.getAttribute('href');
+            if (!wikiLink?.startsWith('/')) wikiLink = false;
             //commonName
             let commonName = col.textContent;
             if (commonName) {
@@ -60,25 +68,31 @@ const getData = async () => {
             }
             animalObj.commonName = commonName;
             animalObj.wikiLink = wikiLink;
-          }
-
-          // COL 3 bionomialName
-          if (i === 2) {
-            animalObj.bionomialName = col.textContent;
+            return;
           }
 
           // COL 4 location
-          if (i === 3) {
+          if (i === 3 || i == 2) {
             let location = col.textContent;
             if (location) {
               location = location.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
-              locationPrev = location;
-            } else {
-              location = locationPrev;
+              location = location.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
             }
 
             animalObj.location = location;
+            return;
           }
+
+          // COL 5 cause
+          //   if (i === 4) {
+          //     let cause = col.textContent;
+          //     if (cause) {
+          //       cause = cause.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
+          //     }
+
+          //     animalObj.cause = cause;
+          //     return;
+          //   }
         });
         return animalObj;
       });
@@ -103,6 +117,9 @@ const getData = async () => {
       let shortDesc = document.querySelectorAll('.mw-parser-output > p')[1]
         .textContent;
       if (imageSrc) returnData.imageSrc = imageSrc;
+      if (shortDesc == '')
+        shortDesc = document.querySelectorAll('.mw-parser-output > p')[2]
+          .textContent;
       if (shortDesc) {
         shortDesc = shortDesc.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
         shortDesc = shortDesc.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
@@ -114,8 +131,7 @@ const getData = async () => {
 
     data[i] = { ...data[i], ...newData };
     const pause = (ms) => new Promise((res) => setTimeout(res, ms));
-    await pause(500); // Don't spam like there is no tommorrow ;)
-    if (i === 3) break; // TODO: remove later
+    await pause(500); // Don't spam
   }
 
   await browser.close();
@@ -124,12 +140,29 @@ const getData = async () => {
 };
 
 (async function () {
-  const data = await getData();
-  console.log(data);
-  const finalData = JSON.stringify(data.filter((el) => el.length !== 0));
+  let data = await getData();
+  data = data.filter((el) => el.length !== 0);
 
+  let lastRecordPrev;
+  let locationPrev;
+  const finalData = data.map((animal, i) => {
+    // Columns that can span over multiple rows: lastRecord, location, cause
+    if (animal.location) locationPrev = animal.location;
+    if (animal.lastRecord) lastRecordPrev = animal.location;
+    return {
+      commonName: animal.commonName || false,
+      wikiLink: animal.wikiLink || false,
+      bionomialName: animal.bionomialName,
+      shortDesc: animal.shortDesc || false,
+      imageSrc: animal.imageSrc || false,
+      lastRecord: animal.lastRecord || lastRecordPrev,
+      location: animal.location || locationPrev,
+    };
+    // if (!animal.cause) animal.cause = data[i - 1].cause;
+  });
+  console.log('final data: ', finalData);
   // First write to file
-  fs.writeFileSync(`${__dirname}/animalData.json`, finalData);
+  fs.writeFileSync(`${__dirname}/animalData.json`, JSON.stringify(finalData));
 
   //Log wikis
   //   let hasWiki = 0;

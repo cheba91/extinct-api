@@ -8,9 +8,7 @@ exports.getOne = (() =>
     if (!doc) return next(new AppError(`No animal was found.`, 404));
     res.status(200).json({
       status: 'success',
-      data: {
-        data: doc,
-      },
+      data: doc,
     });
   }))();
 
@@ -23,8 +21,6 @@ exports.getMultiple = (() =>
     const doc = await Animals.aggregate([{ $sample: { size: number } }]);
     res.status(200).json({
       status: 'success',
-      data: {
-        data: doc,
-      },
+      data: doc,
     });
   }))();
