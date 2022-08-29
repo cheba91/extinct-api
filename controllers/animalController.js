@@ -4,6 +4,9 @@ const catchAsync = require('../utils/catchAsync');
 
 exports.getOne = (() =>
   catchAsync(async (req, res, next) => {
+    return res.status(200).json({
+      status: 'HERE!!!',
+    });
     const doc = await Animals.aggregate([{ $sample: { size: 1 } }]);
     if (!doc) return next(new AppError(`No animal was found.`, 404));
     res.status(200).json({

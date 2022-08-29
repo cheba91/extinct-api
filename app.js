@@ -60,7 +60,12 @@ app.use('/api/v1/animal', animalRouter);
 
 // Catch all unhandlerd requests:
 app.all('*', (req, res, next) => {
-  next(new AppError(`Can't find ${req.originalUrl} on server.`, 404));
+  next(
+    new AppError(
+      `Can't find ${req.originalUrl} on server. Please go to /api/v1/animal`,
+      404
+    )
+  );
 });
 
 // Error handling
