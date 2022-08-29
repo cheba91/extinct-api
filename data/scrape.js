@@ -3,69 +3,89 @@ const fs = require('fs');
 const pup = require('puppeteer');
 const baseUrl = 'https://en.wikipedia.org';
 
-//Previus values, cuz some rows span longer if they have the same value
-// TODO: possible previous values: extinct time, former range
-
 //------ Get fata from table --------//
 const getData = async () => {
   const browser = await pup.launch({
     dumpio: true,
     // headless: false,
+    // args: ['--use-gl=egl'],
   });
 
   const page = await browser.newPage();
 
-  await page.goto(
-    baseUrl + '/wiki/List_of_extinct_animals_of_the_British_Isles'
-  );
-  const data = await page.$$eval('table.sortable tbody > tr', (rows) => {
-    const rowsArr = Array.from(rows, (row) => {
-      const cols = row.querySelectorAll('td');
-      const animalObj = {};
-      Array.from(cols, (col, i) => {
-        //Process each col individually for more control
-        // TODO: Check which cols are required and which optional
-        // TODO: get location when on real data
-
-        // commonName & link
-        if (i === 0) {
-          // wikiLink
-          let link = col.querySelector('a');
-          let wikiLink = link.getAttribute('href');
-          if (!wikiLink.startsWith('/')) wikiLink = false;
-          //commonName
-          let commonName = col.textContent;
-          if (commonName) {
-            commonName = commonName.replace(/\[.*?\]|[']+/g, ''); //remove [n], ''
-            commonName = commonName.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
-            if (commonName.startsWith('†')) commonName = commonName.slice(1);
-          }
-          animalObj.commonName = commonName;
-          animalObj.wikiLink = wikiLink;
-        }
-
-        //bionomialName
-        if (i === 1) {
-          animalObj.bionomialName = col.textContent;
-        }
-
-        //Last seen
-        if (i === 3) {
-          let seenText = col.textContent;
-          if (seenText) {
-            seenText = seenText.replace(/\[.*?\]|[']+/g, ''); //remove [n], ''
-            seenText = seenText.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
-            if (seenText.startsWith('c. ')) seenText = seenText.slice(3); // Remove circa // 'c. '
-          }
-          if (seenText === '') seenText = 'unknown';
-          animalObj.lastRecord = seenText;
-        }
-      });
-      return animalObj;
-    });
-
-    return rowsArr;
+  await page.goto(baseUrl + '/wiki/Timeline_of_extinctions_in_the_Holocene', {
+    waitUntil: 'networkidle2',
   });
+  //   await page.waitForTimeout(4000);
+  const data = await page.$$eval(
+    'table.jquery-tablesorter tbody > tr',
+    (rows) => {
+      const rowsArr = Array.from(rows, (row) => {
+        const cols = row.querySelectorAll('td');
+        const animalObj = {};
+        Array.from(cols, (col, i) => {
+          //Previus values, cuz some rows span longer if they have the same value
+          let seenTextPrev, locationPrev;
+
+          //Process each col individually for more control
+
+          // COL 1 Last seen
+          if (i === 0) {
+            let seenText = col.textContent;
+            if (seenText) {
+              seenText = seenText.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
+              seenText = seenText.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
+              if (seenText.startsWith('c. ')) seenText = seenText.slice(3); // Remove circa // 'c. '
+              if (seenText === '') seenText = 'unknown';
+              seenTextPrev = seenText;
+            } else {
+              seenText = seenTextPrev;
+            }
+            console.log('ANIMAL LAST RECORD: ', seenText);
+            animalObj.lastRecord = seenText;
+          }
+
+          // COL 2 commonName & link
+          if (i === 1) {
+            // wikiLink
+            let link = col.querySelector('a');
+            let wikiLink = link.getAttribute('href');
+            if (!wikiLink.startsWith('/')) wikiLink = false;
+            //commonName
+            let commonName = col.textContent;
+            if (commonName) {
+              commonName = commonName.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
+              commonName = commonName.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
+              if (commonName.startsWith('†')) commonName = commonName.slice(1);
+            }
+            animalObj.commonName = commonName;
+            animalObj.wikiLink = wikiLink;
+          }
+
+          // COL 3 bionomialName
+          if (i === 2) {
+            animalObj.bionomialName = col.textContent;
+          }
+
+          // COL 4 location
+          if (i === 3) {
+            let location = col.textContent;
+            if (location) {
+              location = location.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
+              locationPrev = location;
+            } else {
+              location = locationPrev;
+            }
+
+            animalObj.location = location;
+          }
+        });
+        return animalObj;
+      });
+
+      return rowsArr;
+    }
+  );
   //------ Get single pages --------//
   for (let i = 0; i < data.length; i++) {
     const animal = data[i];
@@ -84,7 +104,7 @@ const getData = async () => {
         .textContent;
       if (imageSrc) returnData.imageSrc = imageSrc;
       if (shortDesc) {
-        shortDesc = shortDesc.replace(/\[.*?\]|[']+/g, ''); //remove [n], ''
+        shortDesc = shortDesc.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
         shortDesc = shortDesc.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
 
         returnData.shortDesc = shortDesc;
@@ -106,12 +126,10 @@ const getData = async () => {
 (async function () {
   const data = await getData();
   console.log(data);
-  console.log(typeof data);
-  console.log(JSON.stringify(data));
-  console.log(typeof JSON.stringify(data));
+  const finalData = JSON.stringify(data.filter((el) => el.length !== 0));
 
   // First write to file
-  fs.writeFileSync(`${__dirname}/animalData.json`, JSON.stringify(data));
+  fs.writeFileSync(`${__dirname}/animalData.json`, finalData);
 
   //Log wikis
   //   let hasWiki = 0;
