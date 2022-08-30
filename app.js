@@ -57,6 +57,7 @@ app.use(
 
 // Routes
 app.use('/api/v1/animal', animalRouter);
+app.get('/favicon.ico', (req, res) => res.status(204));
 // Catch all unhandlerd requests:
 app.all('*', (req, res, next) => {
   next(
