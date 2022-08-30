@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const animalSchema = new mongoose.Schema({
-  name: {
+  commonName: {
     type: String,
     maxLength: [300, 'Maximum name length is 300 characters.'],
   },

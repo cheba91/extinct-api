@@ -22,21 +22,31 @@ const getData = async () => {
       const rowsArr = Array.from(rows, (row) => {
         const cols = row.querySelectorAll('td');
         const animalObj = {};
-        Array.from(cols, (col, i) => {
-          // COL 1 Last seen
-          if (col.querySelector('b')) {
-            let seenText = col.textContent;
-            if (seenText) {
-              seenText = seenText.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
-              seenText = seenText.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
-              if (seenText.startsWith('c. ')) seenText = seenText.slice(3); // Remove circa // 'c. '
-              if (seenText === '') seenText = 'unknown';
-            }
-            animalObj.lastRecord = seenText;
-          }
+        // Get position of bionominal name
+        let bionominalNamePosition;
+        let bioEl = row.querySelector('i')?.closest('td');
+        if (bioEl) {
+          bionominalNamePosition = Array.from(cols).findIndex((node) =>
+            node.isEqualNode(bioEl)
+          );
+        }
+        // console.log('bionominalNamePosition', bionominalNamePosition);
 
-          // COL 3 bionomialName
-          if (col.querySelector('i') && (i === 1 || i === 2)) {
+        // Get position of last seen, either 0 or undefined
+        let lastSeenPosition;
+        let seenEl = row.querySelector('b')?.closest('td');
+        if (seenEl) {
+          lastSeenPosition = Array.from(cols).findIndex((node) =>
+            node.isEqualNode(seenEl)
+          );
+        }
+        // console.log('lastSeenPosition', lastSeenPosition);
+
+        Array.from(cols, (col, i) => {
+          // NEED WAY TO DIFFERENTIATE COLS, THERE CAN BE 3-6 PER ROW
+
+          // BIONOMINAL NAME
+          if (bionominalNamePosition === i) {
             let bionomialName = col.textContent;
             if (bionomialName) {
               bionomialName = bionomialName.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
@@ -47,14 +57,21 @@ const getData = async () => {
             return;
           }
 
-          // COL 2 commonName & link
-          if (
-            // !col.textContent.startsWith('c. ') &&
-            // !Number(col.textContent.match(/^\d+/)[0]) &&
-            !col.querySelector('b') &&
-            (i === 0 || i === 1)
-          ) {
-            console.log('IN COMMON NAME:', col.textContent);
+          // LAST SEEN
+          if (bionominalNamePosition === i + 2) {
+            let seenText = col.textContent;
+            if (seenText) {
+              seenText = seenText.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
+              seenText = seenText.replace(/(\r\n|\n|\r)/g, ''); //remove all kinds of line brakes
+              if (seenText.startsWith('c. ')) seenText = seenText.slice(3); // Remove circa // 'c. '
+              if (seenText === '') seenText = 'unknown';
+            }
+
+            animalObj.lastRecord = seenText;
+          }
+
+          // COMMON NAME & LINK
+          if (bionominalNamePosition === i + 1) {
             // wikiLink
             let link = col.querySelector('a');
             let wikiLink = link?.getAttribute('href');
@@ -71,8 +88,8 @@ const getData = async () => {
             return;
           }
 
-          // COL 4 location
-          if (i === 3 || i == 2) {
+          // LOCATION
+          if (bionominalNamePosition === i - 1) {
             let location = col.textContent;
             if (location) {
               location = location.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
@@ -82,17 +99,6 @@ const getData = async () => {
             animalObj.location = location;
             return;
           }
-
-          // COL 5 cause
-          //   if (i === 4) {
-          //     let cause = col.textContent;
-          //     if (cause) {
-          //       cause = cause.replace(/\[.*?\]|["]+/g, ''); //remove [n], ''
-          //     }
-
-          //     animalObj.cause = cause;
-          //     return;
-          //   }
         });
         return animalObj;
       });
@@ -145,10 +151,10 @@ const getData = async () => {
 
   let lastRecordPrev;
   let locationPrev;
-  const finalData = data.map((animal, i) => {
+  const finalData = data.map((animal) => {
     // Columns that can span over multiple rows: lastRecord, location, cause
-    if (animal.location) locationPrev = animal.location;
-    if (animal.lastRecord) lastRecordPrev = animal.location;
+    if (animal.location.length) locationPrev = animal.location;
+    if (animal.lastRecord.length) lastRecordPrev = animal.location;
     return {
       commonName: animal.commonName || false,
       wikiLink: animal.wikiLink || false,

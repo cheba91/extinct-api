@@ -30,7 +30,7 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   message: 'Too many requests',
 });
-app.use('/api', limiter);
+app.use('/', limiter);
 
 // Body parser, reading data from req.body
 app.use(express.json({ limit: '10kb' }));
@@ -57,7 +57,6 @@ app.use(
 
 // Routes
 app.use('/api/v1/animal', animalRouter);
-
 // Catch all unhandlerd requests:
 app.all('*', (req, res, next) => {
   next(

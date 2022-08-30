@@ -35,7 +35,7 @@ const sendErrorDev = (err, req, res) => {
   }
   // It's not API, render err on page
   console.error('ERROR', err);
-  return res.status(err.statusCode).render('error', {
+  return res.status(err.statusCode).json({
     title: 'Something went wrong',
     msg: err.message,
   });
@@ -63,7 +63,7 @@ const sendErrorProd = (err, req, res) => {
   }
   // It's not API, render err on page
   if (err.isOperational) {
-    return res.status(err.statusCode).render('error', {
+    return res.status(err.statusCode).json({
       status: err.status,
       message: err.message,
     });
@@ -73,7 +73,7 @@ const sendErrorProd = (err, req, res) => {
   console.error('ERROR', err);
 
   // Send generic message
-  return res.status(err.statusCode).render('error', {
+  return res.status(err.statusCode).json({
     status: err.status,
     message: 'Please try again later.',
   });
