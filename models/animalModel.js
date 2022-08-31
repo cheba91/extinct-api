@@ -5,7 +5,7 @@ const animalSchema = new mongoose.Schema({
     type: String,
     maxLength: [300, 'Maximum name length is 300 characters.'],
   },
-  bionomialName: {
+  binomialName: {
     type: String,
     unique: [true, 'Animal bionomial name needs to be unique'],
     required: [true, 'Animal bionomial name is required.'],
@@ -15,9 +15,17 @@ const animalSchema = new mongoose.Schema({
     type: String,
     maxLength: [500, 'Maximum location length is 500 characters.'],
   },
+  wikiLink: {
+    type: String,
+    maxLength: [500, 'Maximum wikiLink is 500 characters.'],
+  },
   lastRecord: {
     type: String,
     maxLength: [300, 'Maximum last record length is 300 characters.'],
+  },
+  causes: {
+    type: String,
+    maxLength: [300, 'Maximum causes length is 300 characters.'],
   },
   imageSrc: {
     type: String,
@@ -27,11 +35,6 @@ const animalSchema = new mongoose.Schema({
     type: String,
     maxLength: [10000, 'Maximum name length is 10000 characters.'],
   },
-  // cause: {
-  //   type: String,
-  //   minLength: [2, 'Minimum image source length is 2 characters.'],
-  //   maxLength: [300, 'Maximum image source length is 300 characters.'],
-  // },
 });
 
 const Animal = mongoose.model('Animal', animalSchema);

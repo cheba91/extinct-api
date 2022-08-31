@@ -18,7 +18,7 @@ const animals = JSON.parse(fs.readFileSync(`${__dirname}/animalData.json`));
 // Import data to DB
 let noName =
   (noWiki =
-  noBionominal =
+  noBinomial =
   noLocation =
   noShortDesc =
   noImg =
@@ -26,21 +26,21 @@ let noName =
     0);
 animals.forEach((animal) => {
   if (!animal.commonName) {
-    // console.log(animal.bionomialName);
     noName++;
   }
   if (!animal.wikiLink) noWiki++;
-  if (!animal.bionomialName) noBionominal++;
+  if (!animal.binomialName) {
+    console.log(animal.commonName);
+    noBinomial++;
+  }
   if (!animal.lastRecord) {
-    // console.log(animal.bionomialName);
     noLocation++;
   }
   if (!animal.wikiLink) {
-    // console.log('No last record: ', animal.bionomialName);
+    // console.log('No last record: ', animal.binomialName);
     noLastRecord++;
   }
   if (!animal.shortDesc) {
-    // console.log('No short desc: ', animal.bionomialName);
     noShortDesc++;
   }
   if (!animal.imageSrc) noImg++;
@@ -49,17 +49,17 @@ animals.forEach((animal) => {
 const importData = async () => {
   console.log('noName: ', noName);
   console.log('noWiki: ', noWiki);
-  console.log('noBionominal: ', noBionominal);
+  console.log('noBinomial: ', noBinomial);
   console.log('noLocation: ', noLocation);
   console.log('noShortDesc: ', noShortDesc);
   console.log('noImg: ', noImg);
   console.log('noLastRecord: ', noLastRecord);
+  console.log('length: ', animals.length);
   try {
     // await Animals.create({ name: 'Rihno' });
     // await Animals.insertMany(animals);
     // await Animals.insertMany(animals, { ordered: false });
     console.log('Data added to DB');
-    console.log('length: ', animals.length);
   } catch (err) {
     console.log('ERROR inserting data: ', err);
   }

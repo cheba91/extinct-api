@@ -24,6 +24,7 @@ exports.getMultiple = (() =>
     const doc = await Animals.aggregate([{ $sample: { size: number } }]);
     res.status(200).json({
       status: 'success',
+      results: doc.length,
       data: doc,
     });
   }))();
