@@ -1,15 +1,14 @@
 const mongoose = require('mongoose');
 
 const animalSchema = new mongoose.Schema({
+  binomialName: {
+    type: String,
+    required: [true, 'Animal binomial name is required.'],
+    maxLength: [300, 'Maximum binomial name length is 300 characters.'],
+  },
   commonName: {
     type: String,
     maxLength: [300, 'Maximum name length is 300 characters.'],
-  },
-  binomialName: {
-    type: String,
-    unique: [true, 'Animal bionomial name needs to be unique'],
-    required: [true, 'Animal bionomial name is required.'],
-    maxLength: [300, 'Maximum bionomial name length is 300 characters.'],
   },
   location: {
     type: String,
@@ -22,10 +21,6 @@ const animalSchema = new mongoose.Schema({
   lastRecord: {
     type: String,
     maxLength: [300, 'Maximum last record length is 300 characters.'],
-  },
-  causes: {
-    type: String,
-    maxLength: [300, 'Maximum causes length is 300 characters.'],
   },
   imageSrc: {
     type: String,

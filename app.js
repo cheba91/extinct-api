@@ -1,11 +1,10 @@
-const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
-const cookieParser = require('cookie-parser');
+const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const globalErrorHandler = require('./controllers/errorController');
 const AppError = require('./utils/appError');
@@ -35,7 +34,7 @@ app.use('/', limiter);
 // Body parser, reading data from req.body
 app.use(express.json({ limit: '10kb' }));
 //Cookie parser
-app.use(cookieParser());
+// app.use(cookieParser());
 
 // Data sanitization against noSQL & XSS
 app.use(mongoSanitize()); //removes $ and .
@@ -48,6 +47,7 @@ app.use(
   })
 );
 
+app.use(cors());
 // Test middleware
 // app.use((req, res, next) => {
 //   req.requestTime = new Date().toISOString();

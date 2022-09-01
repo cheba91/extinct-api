@@ -26,25 +26,41 @@ let noName =
     0);
 animals.forEach((animal) => {
   if (!animal.commonName) {
+    // console.log('No common name: ', animal.binomialName);
     noName++;
   }
-  if (!animal.wikiLink) noWiki++;
+  if (!animal.wikiLink) {
+    // console.log('No wiki: ', animal.binomialName);
+    noWiki++;
+  }
   if (!animal.binomialName) {
-    console.log(animal.commonName);
+    // console.log("No binomial name: ", animal.commonName);
     noBinomial++;
   }
-  if (!animal.lastRecord) {
+  if (!animal.location) {
+    // console.log('No last record: ', animal.binomialName);
     noLocation++;
   }
-  if (!animal.wikiLink) {
-    // console.log('No last record: ', animal.binomialName);
+  if (!animal.lastRecord) {
+    // console.log('No wiki: ', animal.binomialName);
     noLastRecord++;
   }
   if (!animal.shortDesc) {
+    console.log('No shortDesc: ', animal.binomialName);
     noShortDesc++;
   }
-  if (!animal.imageSrc) noImg++;
+  if (!animal.imageSrc) {
+    // console.log('No img: ', animal.binomialName);
+    noImg++;
+  }
 });
+
+// Check duplicate binomialNames
+// const lookup = animals.reduce((a, e) => {
+//   a[e.binomialName] = ++a[e.binomialName] || 0;
+//   return a;
+// }, {});
+// console.log(animals.filter((e) => lookup[e.binomialName]));
 
 const importData = async () => {
   console.log('noName: ', noName);
@@ -57,7 +73,7 @@ const importData = async () => {
   console.log('length: ', animals.length);
   try {
     // await Animals.create({ name: 'Rihno' });
-    // await Animals.insertMany(animals);
+    await Animals.insertMany(animals);
     // await Animals.insertMany(animals, { ordered: false });
     console.log('Data added to DB');
   } catch (err) {

@@ -192,18 +192,3 @@ const getData = async () => {
   //     noWiki
   //   );
 })();
-
-//-------------------------------------------------------------------//
-// Want:
-const sample = [
-  {
-    commonName: "Page's crane",
-    wikiLink: 'https://en.wikipedia.org/wiki/Grus_pagei',
-    bionomialName: 'Grus pagei',
-    location: 'Rancho La Brea, California, United States',
-    lastRecord: '10250-9180 BCE', //some rows are longer(use previous value)
-    shortDesc: 'Lorem ipsum dolor sit amet consectetur adipisicing elit.', // From single page
-    imageSrc: 'https://en.wikipedia.org/wiki/File:Neogyps_errans_Page.jpg', // From single page
-  },
-  //...
-];
