@@ -113,9 +113,8 @@ const getData = async () => {
       const returnData = {};
 
       //   Image source
-      const imageSrc = document
-        .querySelectorAll('table.infobox a.image')[0]
-        ?.getAttribute('href');
+      const imageSrc = document.querySelectorAll('table.infobox a.image img')[0]
+        ?.src;
       if (imageSrc) returnData.imageSrc = imageSrc;
 
       // Short description
@@ -138,6 +137,7 @@ const getData = async () => {
     await (() => new Promise((res) => setTimeout(res, 500)))(); // Don't spam
     // const pause = (ms) => new Promise((res) => setTimeout(res, ms));
     // await pause(500); // Don't spam
+    // if (i === 3) break;
   }
 
   await browser.close();
@@ -161,7 +161,7 @@ const getData = async () => {
       wikiLink: animal.wikiLink?.length ? baseUrl + animal.wikiLink : false,
       binomialName: animal.binomialName,
       shortDesc: animal.shortDesc || false,
-      imageSrc: animal.imageSrc?.length ? baseUrl + animal.imageSrc : false,
+      imageSrc: animal.imageSrc || false,
       lastRecord: latestLastRecord,
       location: latestLocation,
       //   causes: latestCauses,

@@ -4,11 +4,15 @@ const catchAsync = require('../utils/catchAsync');
 
 exports.getOne = (() =>
   catchAsync(async (req, res, next) => {
-    const doc = await Animals.aggregate([{ $sample: { size: 1 } }]);
+    const query = [
+      { $match: { imageSrc: { $ne: 'false' } } },
+      { $sample: { size: 1 } },
+    ];
+    const { imageRequired } = req.query;
+    imageRequired === 'false' && query.shift();
+    const doc = await Animals.aggregate(query);
     if (!doc) return next(new AppError(`No animal was found.`, 404));
-    const returnDoc = removeFields(doc);
 
-    console.log(doc, typeof doc);
     res.status(200).json({
       status: 'success',
       data: doc,

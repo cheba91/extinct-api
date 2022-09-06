@@ -25,7 +25,7 @@ if (process.env.NODE_ENV === 'development') {
 
 // Limit req from the same api
 const limiter = rateLimit({
-  max: 50,
+  max: 100,
   windowMs: 15 * 60 * 1000,
   message: 'Too many requests',
 });
