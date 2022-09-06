@@ -23,7 +23,8 @@ exports.getMultiple = (() =>
   catchAsync(async (req, res, next) => {
     let number = parseInt(req.params.nr);
     if (!number) return next(new AppError('Invalid number passed.', 400));
-    if (number > process.env.TOTAL_ANIMALS) number = process.env.TOTAL_ANIMALS;
+    if (number > process.env.TOTAL_ANIMALS)
+      number = parseInt(process.env.TOTAL_ANIMALS);
     if (number < 1) number = 1;
     const doc = await Animals.aggregate([{ $sample: { size: number } }]);
     if (!doc) return next(new AppError('No animals found.', 404));
